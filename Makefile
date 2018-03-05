@@ -13,22 +13,22 @@
 # limitations under the License.
 
 # The binary to build (just the basename).
-BIN := myapp
+BIN := papercli
 
 # This repo's root import path (under GOPATH).
-PKG := github.com/thockin/go-build-template
+PKG := github.com/jpopesculian/papercli
 
 # Where to push the docker image.
-REGISTRY ?= thockin
+REGISTRY ?= jpopesculian
 
 # Which architecture to build - see $(ALL_ARCH) for options.
 ARCH ?= amd64
 
 # This version-strategy uses git tags to set the version string
-VERSION := $(shell git describe --tags --always --dirty)
+# VERSION := $(shell git describe --tags --always --dirty)
 #
 # This version-strategy uses a manual value to set the version string
-#VERSION := 1.2.3
+VERSION := 0.0.1
 
 ###
 ### These variables should not need tweaking.
