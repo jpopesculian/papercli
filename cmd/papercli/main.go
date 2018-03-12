@@ -17,77 +17,22 @@ limitations under the License.
 package main
 
 import (
-	"flag"
 	"fmt"
-	"io/ioutil"
-	"log"
-	"net/http"
+	"github.com/jpopesculian/papercli/pkg/config"
+	"github.com/jpopesculian/papercli/pkg/dropbox"
+	"github.com/jpopesculian/papercli/pkg/version"
 	"os"
 )
 
-type apiConfig struct {
-	accessKey string
-}
-
-func myUsage() {
-	fmt.Printf("Usage: %s [OPTIONS] argument ...\n", os.Args[0])
-	flag.PrintDefaults()
-}
-
-func pull(config apiConfig) {
-	req, err := http.NewRequest(
-		"POST",
-		"https://api.dropboxapi.com/2/users/get_current_account",
-		nil,
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	req.Header.Set("Authorization", "Bearer "+config.accessKey)
-	client := &http.Client{}
-	res, err := client.Do(req)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer res.Body.Close()
-	resData, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	resString := string(resData)
-
-	log.Printf(resString)
-}
-
 func main() {
-	var (
-		accessKey = flag.String(
-			"accessKey",
-			os.Getenv("PAPER_ACCESS_KEY"),
-			"Access Key for self authorized testing",
-		)
-	)
-	flag.Usage = myUsage
-	flag.Parse()
-	if len(flag.Args()) == 0 {
-		flag.Usage()
-		os.Exit(1)
-	}
-	args := flag.Args()
-	command := args[0]
-	if command == "help" {
-		flag.Usage()
-		os.Exit(0)
-	}
-	config := apiConfig{
-		accessKey: *accessKey,
-	}
-	switch command := args[0]; command {
-	case "pull":
-		pull(config)
+	command, options := config.ParseArgs()
+	switch command {
+	case "test":
+		dropbox.Test(options)
+	case "version":
+		fmt.Println(version.VERSION)
 	default:
-		flag.Usage()
+		config.PrintUsage()
 		os.Exit(0)
 	}
 }
