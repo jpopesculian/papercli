@@ -29,6 +29,10 @@ func main() {
 	switch command {
 	case "test":
 		dropbox.Test(options)
+	case "list":
+		dropbox.List(options)
+	case "folder":
+		dropbox.FolderInfo(options)
 	case "version":
 		fmt.Println(version.VERSION)
 	default:
