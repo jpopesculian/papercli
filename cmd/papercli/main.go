@@ -30,9 +30,11 @@ func main() {
 	case "test":
 		dropbox.Test(options)
 	case "list":
-		dropbox.List(options)
+		dropbox.DocList(options)
 	case "folder":
-		dropbox.FolderInfo(options)
+		dropbox.FolderTest(options)
+	case "download":
+		dropbox.DownloadTest(options)
 	case "version":
 		fmt.Println(version.VERSION)
 	default:
