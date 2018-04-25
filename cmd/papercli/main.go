@@ -18,6 +18,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/jpopesculian/papercli/pkg/api"
 	"github.com/jpopesculian/papercli/pkg/config"
 	"github.com/jpopesculian/papercli/pkg/dropbox"
 	"github.com/jpopesculian/papercli/pkg/version"
@@ -35,6 +36,8 @@ func main() {
 		dropbox.FolderTest(options)
 	case "download":
 		dropbox.DownloadTest(options)
+	case "fetch":
+		api.Fetch(options)
 	case "version":
 		fmt.Println(version.VERSION)
 	default:

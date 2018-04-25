@@ -8,7 +8,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"time"
 )
 
@@ -126,17 +125,16 @@ func (request *Request) EvalStruct(object interface{}) (err error) {
 	return json.Unmarshal([]byte(result), object)
 }
 
-func (request *Request) EvalFile(path string) (err error) {
+func (request *Request) EvalFile() (data []byte, err error) {
 	res, err := request.doHttpReq()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer res.Body.Close()
-	out, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-	io.Copy(out, res.Body)
-	return nil
+	// out, err := os.Create(path)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// defer out.Close()
+	return ioutil.ReadAll(res.Body)
 }

@@ -17,6 +17,7 @@ type DownloadResult struct {
 	Title    string `json:"title"`
 	Revision int    `json:"revision"`
 	MimeType string `json:"mime_type"`
+	Content  []byte `json:"content"`
 }
 
 func Download(docId Id, options *config.CliOptions) (result *DownloadResult, err error) {
@@ -35,8 +36,7 @@ func Download(docId Id, options *config.CliOptions) (result *DownloadResult, err
 	if err != nil {
 		return nil, err
 	}
-	spew.Dump(result)
-	err = request.EvalFile(result.Title + ".md")
+	result.Content, err = request.EvalFile()
 	if err != nil {
 		return nil, err
 	}
