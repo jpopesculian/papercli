@@ -34,3 +34,36 @@ func FolderInfo(docId Id, options *config.CliOptions) (result *FolderResult, err
 	}
 	return result, nil
 }
+
+func FolderInfoFuture(docId Id, options *config.CliOptions) (results chan *FolderResult, errors chan error) {
+	results = make(chan *FolderResult, 1)
+	errors = make(chan error, 1)
+	go func() {
+		result, err := FolderInfo(docId, options)
+		errors <- err
+		results <- result
+	}()
+	return results, errors
+}
+
+func BatchFolderInfo(docIds []Id, options *config.CliOptions) (folderInfos []*FolderResult, err error) {
+	n := len(docIds)
+	folderInfos = make([]*FolderResult, n)
+	results := make(chan *FolderResult, n)
+	errors := make(chan error, n)
+	for _, docId := range docIds {
+		go func(docId Id) {
+			folders, err := FolderInfo(docId, options)
+			errors <- err
+			results <- folders
+		}(docId)
+	}
+	for i := 0; i < n; i++ {
+		err := <-errors
+		if err != nil {
+			return nil, err
+		}
+		folderInfos[i] = <-results
+	}
+	return folderInfos, nil
+}

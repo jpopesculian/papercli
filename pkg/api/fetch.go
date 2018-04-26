@@ -1,7 +1,7 @@
 package api
 
 import (
-	"github.com/davecgh/go-spew/spew"
+	// "github.com/davecgh/go-spew/spew"
 	"github.com/jpopesculian/papercli/pkg/config"
 	dp "github.com/jpopesculian/papercli/pkg/dropbox"
 	"github.com/jpopesculian/papercli/pkg/store"
@@ -14,71 +14,60 @@ func Fetch(options *config.CliOptions) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	folders, err := fetchFolders(list.DocIds, options)
+	folders, documents, err := fetchDocInfos(list.DocIds, options)
 	if err != nil {
 		log.Fatal(err)
 	}
-	spew.Dump(folders)
-	err = store.SaveUpstreamFolders(folders)
-	if err != nil {
+	if err = store.SaveUpstreamFolders(folders); err != nil {
+		log.Fatal(err)
+	}
+	if err = store.SaveUpstreamDocuments(documents); err != nil {
 		log.Fatal(err)
 	}
 }
 
-type uniqueFolderList struct {
-	folderPresence map[store.Id]bool
-	folders        []store.Folder
+func fetchDocInfo(docId dp.Id, options *config.CliOptions) (folderList []store.Folder, document *store.Document, err error) {
+	folderInfoC, folderErrC := dp.FolderInfoFuture(docId, options)
+	downloadC, downloadErrC := dp.DownloadFuture(docId, options)
+	err = <-downloadErrC
+	if err != nil {
+		return nil, nil, err
+	}
+	err = <-folderErrC
+	if err != nil {
+		return nil, nil, err
+	}
+	folderInfo := <-folderInfoC
+	download := <-downloadC
+	folderList = folderInfoToFolderList(folderInfo)
+	document = downloadResultToDocument(docId, download, folderList)
+	return folderList, document, nil
 }
 
-func newUniqueFolderList(n int) *uniqueFolderList {
-	return &uniqueFolderList{
-		folderPresence: map[store.Id]bool{},
-		folders:        make([]store.Folder, 0, n),
-	}
-}
-func (list *uniqueFolderList) add(folderResult *dp.FolderResult) {
-	folders := folderResultToFolderList(folderResult)
-	for _, folder := range folders {
-		if !list.folderPresence[folder.Id] {
-			list.folderPresence[folder.Id] = true
-			list.folders = append(list.folders, folder)
-		}
-	}
-}
-
-func folderResultToFolderList(folders *dp.FolderResult) (result []store.Folder) {
-	result = make([]store.Folder, len(folders.Folders))
-	for index, folder := range folders.Folders {
-		result[index] = store.Folder{
-			Id:   store.Id(folder.Id),
-			Name: folder.Name,
-		}
-		if index != 0 {
-			result[index].Parent = result[index-1].Id
-		}
-	}
-	return result
-}
-
-func fetchFolders(docIds []dp.Id, options *config.CliOptions) (result []store.Folder, err error) {
+func fetchDocInfos(docIds []dp.Id, options *config.CliOptions) (folderResult []store.Folder, documentResult []store.Document, err error) {
 	n := len(docIds)
-	results := make(chan *dp.FolderResult, n)
-	errors := make(chan error, n)
+	folderLists := make(chan []store.Folder, n)
+	documents := make(chan *store.Document, n)
+	errs := make(chan error, n*2)
 	for _, docId := range docIds {
 		go func(docId dp.Id) {
-			folders, err := dp.FolderInfo(docId, options)
-			errors <- err
-			results <- folders
+			folderList, document, err := fetchDocInfo(docId, options)
+			errs <- err
+			folderLists <- folderList
+			documents <- document
 		}(docId)
 	}
-	folderList := newUniqueFolderList((n + 1) * 2)
+	uniqueFolderList := newUniqueFolderList((n + 1) * 2)
+	documentResult = make([]store.Document, n)
 	for i := 0; i < n; i++ {
-		err := <-errors
+		err := <-errs
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
-		folders := <-results
-		folderList.add(folders)
+		folderList := <-folderLists
+		document := <-documents
+		uniqueFolderList.add(folderList)
+		documentResult[i] = *document
 	}
-	return folderList.folders, nil
+	return uniqueFolderList.folders, documentResult, nil
 }
