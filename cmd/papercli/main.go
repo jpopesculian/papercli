@@ -21,6 +21,7 @@ import (
 	"github.com/jpopesculian/papercli/pkg/api"
 	"github.com/jpopesculian/papercli/pkg/config"
 	"github.com/jpopesculian/papercli/pkg/dropbox"
+	"github.com/jpopesculian/papercli/pkg/files"
 	"github.com/jpopesculian/papercli/pkg/version"
 	"os"
 )
@@ -38,6 +39,11 @@ func main() {
 		dropbox.DownloadTest(options)
 	case "fetch":
 		api.Fetch(options)
+	case "update":
+		api.Update(options)
+	case "init":
+		fmt.Println(files.RootDir())
+		// files.CreateRootFile()
 	case "version":
 		fmt.Println(version.VERSION)
 	default:
