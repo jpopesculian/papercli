@@ -4,6 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/jpopesculian/papercli/pkg/utils"
 	"os"
 )
 
@@ -46,7 +47,7 @@ func (options *CliOptions) RootDir() (string, error) {
 	if len(*options.Dir) < 1 {
 		return "", errors.New("PaperCLI can't find root directory!")
 	}
-	if passed, err := isDir(*options.Dir); !passed {
+	if passed, err := utils.IsDir(*options.Dir); !passed {
 		return "", err
 	}
 	return *options.Dir, nil
@@ -58,7 +59,7 @@ func (options *CliOptions) ConfigDir() (string, error) {
 		return "", err
 	}
 	configDir := configDirFromRoot(rootDir)
-	if passed, err := isDir(*options.Dir); !passed {
+	if passed, err := utils.IsDir(*options.Dir); !passed {
 		return "", err
 	}
 	return configDir, nil

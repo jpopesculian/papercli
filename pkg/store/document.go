@@ -150,3 +150,23 @@ func (store *Store) UpstreamDocumentById(id Id) *Document {
 	document.Folder = <-folder
 	return document
 }
+
+func (store *Store) UpstreamDocuments() (documents chan *Document, cont chan bool) {
+	documents = make(chan *Document)
+	cont = make(chan bool)
+	go func() {
+		store.db.View(func(tx *bolt.Tx) error {
+			b := tx.Bucket(UPSTREAM_TITLE_B)
+			c := b.Cursor()
+			for k, _ := c.First(); k != nil; k, _ = c.Next() {
+				cont <- true
+				go func(id Id) {
+					documents <- store.UpstreamDocumentById(id)
+				}(Id(string(k)))
+			}
+			cont <- false
+			return nil
+		})
+	}()
+	return documents, cont
+}

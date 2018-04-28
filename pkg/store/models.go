@@ -72,3 +72,7 @@ func (store *Store) createBuckets() error {
 	})
 	return err
 }
+
+func (store *Store) Close() error {
+	return store.db.Close()
+}

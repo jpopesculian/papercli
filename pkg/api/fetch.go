@@ -10,6 +10,7 @@ import (
 
 func Fetch(options *config.CliOptions) {
 	store := store.NewStore(options)
+	defer store.Close()
 	list, err := dp.DocList(options)
 	if err != nil {
 		log.Fatal(err)

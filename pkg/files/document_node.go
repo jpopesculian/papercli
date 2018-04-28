@@ -2,6 +2,8 @@ package files
 
 import (
 	"github.com/jpopesculian/papercli/pkg/store"
+	"io/ioutil"
+	"path/filepath"
 )
 
 type DocumentNode struct {
@@ -22,11 +24,24 @@ func (node *DocumentNode) IsRoot() bool {
 	return node.Prev() == nil
 }
 
+func (node *DocumentNode) IsLeaf() bool {
+	return node.Next() == nil
+}
+
 func (node *DocumentNode) SetParent(parent Node) {
 	node.Parent = parent
 }
 
 func (node *DocumentNode) SetChild(child Node) {
+}
+
+func (node *DocumentNode) Create(dir string) error {
+	path := filepath.Join(dir, node.FsName())
+	return ioutil.WriteFile(path, node.Content, 0644)
+}
+
+func (node *DocumentNode) FsName() string {
+	return node.Name + ".md"
 }
 
 func documentToNode(document *store.Document) *DocumentNode {
