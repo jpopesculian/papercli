@@ -31,8 +31,26 @@ func (document *Document) saveUpstreamTitle(tx *bolt.Tx) error {
 	return nil
 }
 
+func (document *Document) saveLocalTitle(tx *bolt.Tx) error {
+	b := tx.Bucket(LOCAL_TITLE_B)
+	err := b.Put([]byte(document.Id), []byte(document.Title))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (document *Document) saveUpstreamFolder(tx *bolt.Tx) error {
 	b := tx.Bucket(UPSTREAM_DOC_FOLDER_B)
+	err := b.Put([]byte(document.Id), []byte(document.Folder))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (document *Document) saveLocalFolder(tx *bolt.Tx) error {
+	b := tx.Bucket(LOCAL_DOC_FOLDER_B)
 	err := b.Put([]byte(document.Id), []byte(document.Folder))
 	if err != nil {
 		return err
@@ -49,8 +67,26 @@ func (document *Document) saveUpstreamRevision(tx *bolt.Tx) error {
 	return nil
 }
 
+func (document *Document) saveLocalRevision(tx *bolt.Tx) error {
+	b := tx.Bucket(LOCAL_REVISION_B)
+	err := b.Put([]byte(document.Id), utils.IToB(document.Revision))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (document *Document) saveLastFetch(tx *bolt.Tx) error {
 	b := tx.Bucket(LAST_FETCH_B)
+	err := b.Put([]byte(document.Id), document.Content)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (document *Document) saveLastPush(tx *bolt.Tx) error {
+	b := tx.Bucket(LAST_PUSH_B)
 	err := b.Put([]byte(document.Id), document.Content)
 	if err != nil {
 		return err
@@ -110,7 +146,7 @@ func (document *Document) getUpstreamRevision(store *Store) chan int {
 	return result
 }
 
-func (document *Document) saveUpstream(tx *bolt.Tx) error {
+func (document *Document) SaveUpstream(tx *bolt.Tx) error {
 	if err := document.saveUpstreamTitle(tx); err != nil {
 		return err
 	}
@@ -123,10 +159,23 @@ func (document *Document) saveUpstream(tx *bolt.Tx) error {
 	return document.saveLastFetch(tx)
 }
 
+func (document *Document) SaveLocal(tx *bolt.Tx) error {
+	if err := document.saveLocalTitle(tx); err != nil {
+		return err
+	}
+	if err := document.saveLocalFolder(tx); err != nil {
+		return err
+	}
+	if err := document.saveLocalRevision(tx); err != nil {
+		return err
+	}
+	return document.saveLastPush(tx)
+}
+
 func (store *Store) SaveUpstreamDocuments(documents []Document) error {
 	err := store.db.Batch(func(tx *bolt.Tx) error {
 		for _, document := range documents {
-			err := document.saveUpstream(tx)
+			err := document.SaveUpstream(tx)
 			if err != nil {
 				return err
 			}
@@ -134,6 +183,12 @@ func (store *Store) SaveUpstreamDocuments(documents []Document) error {
 		return nil
 	})
 	return err
+}
+
+func (store *Store) SaveLocalDocument(document *Document) error {
+	return store.db.Update(func(tx *bolt.Tx) error {
+		return document.SaveLocal(tx)
+	})
 }
 
 func (store *Store) UpstreamDocumentById(id Id) *Document {

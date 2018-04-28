@@ -8,11 +8,17 @@ import (
 )
 
 var UPSTREAM_FOLDER_NAME_B = []byte("upstream_folder_name")
+var LOCAL_FOLDER_NAME_B = []byte("local_folder_name")
 var UPSTREAM_FOLDER_TREE_B = []byte("upstream_folder_tree")
+var LOCAL_FOLDER_TREE_B = []byte("local_folder_tree")
 var UPSTREAM_DOC_FOLDER_B = []byte("upstream_doc_folder")
+var LOCAL_DOC_FOLDER_B = []byte("local_doc_folder")
 var UPSTREAM_TITLE_B = []byte("upstream_title")
+var LOCAL_TITLE_B = []byte("local_title")
 var UPSTREAM_REVISION_B = []byte("upstream_revision")
+var LOCAL_REVISION_B = []byte("local_revision")
 var LAST_FETCH_B = []byte("last_fetch")
+var LAST_PUSH_B = []byte("last_push")
 
 type Id string
 
@@ -60,6 +66,12 @@ func (store *Store) createBuckets() error {
 		UPSTREAM_TITLE_B,
 		UPSTREAM_REVISION_B,
 		LAST_FETCH_B,
+		LOCAL_FOLDER_NAME_B,
+		LOCAL_FOLDER_TREE_B,
+		LOCAL_DOC_FOLDER_B,
+		LOCAL_TITLE_B,
+		LOCAL_REVISION_B,
+		LAST_PUSH_B,
 	}
 	err := store.db.Batch(func(tx *bolt.Tx) error {
 		for _, bucket := range buckets {

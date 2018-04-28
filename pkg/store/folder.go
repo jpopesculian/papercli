@@ -36,11 +36,36 @@ func (folder *Folder) saveUpstreamName(tx *bolt.Tx) error {
 	return nil
 }
 
+func (folder *Folder) saveLocalTree(tx *bolt.Tx) error {
+	b := tx.Bucket(LOCAL_FOLDER_TREE_B)
+	err := b.Put([]byte(folder.Id), []byte(folder.Parent))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (folder *Folder) saveLocalName(tx *bolt.Tx) error {
+	b := tx.Bucket(LOCAL_FOLDER_NAME_B)
+	err := b.Put([]byte(folder.Id), []byte(folder.Name))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (folder *Folder) saveUpstream(tx *bolt.Tx) error {
 	if err := folder.saveUpstreamName(tx); err != nil {
 		return err
 	}
 	return folder.saveUpstreamTree(tx)
+}
+
+func (folder *Folder) saveLocal(tx *bolt.Tx) error {
+	if err := folder.saveLocalName(tx); err != nil {
+		return err
+	}
+	return folder.saveLocalTree(tx)
 }
 
 func (folder *Folder) getUpstreamName(store *Store) chan string {
@@ -73,6 +98,19 @@ func (store *Store) SaveUpstreamFolders(folders []Folder) error {
 	err := store.db.Batch(func(tx *bolt.Tx) error {
 		for _, folder := range folders {
 			err := folder.saveUpstream(tx)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	return err
+}
+
+func (store *Store) SaveLocalFolders(folders []Folder) error {
+	err := store.db.Batch(func(tx *bolt.Tx) error {
+		for _, folder := range folders {
+			err := folder.saveLocal(tx)
 			if err != nil {
 				return err
 			}

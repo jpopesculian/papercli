@@ -7,6 +7,7 @@ import (
 )
 
 type DocumentNode struct {
+	Id      store.Id
 	Name    string
 	Parent  Node
 	Content []byte
@@ -46,6 +47,7 @@ func (node *DocumentNode) FsName() string {
 
 func documentToNode(document *store.Document) *DocumentNode {
 	return &DocumentNode{
+		Id:      document.Id,
 		Name:    document.Title,
 		Content: document.Content,
 	}

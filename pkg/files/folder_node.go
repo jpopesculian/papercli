@@ -7,6 +7,7 @@ import (
 )
 
 type FolderNode struct {
+	Id     store.Id
 	Name   string
 	Parent Node
 	Child  Node
@@ -47,6 +48,20 @@ func (node *FolderNode) FsName() string {
 
 func folderToNode(folder *store.Folder) *FolderNode {
 	return &FolderNode{
+		Id:   folder.Id,
 		Name: folder.Name,
+	}
+}
+
+func nodeToFolder(node *FolderNode) *store.Folder {
+	parentId := store.Id("")
+	parent, ok := node.Parent.(*FolderNode)
+	if ok && parent != nil {
+		parentId = parent.Id
+	}
+	return &store.Folder{
+		Id:     node.Id,
+		Name:   node.Name,
+		Parent: parentId,
 	}
 }

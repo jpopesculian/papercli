@@ -41,3 +41,15 @@ func CreateFile(node Node, options *config.CliOptions) error {
 	}
 	return node.Create(dir)
 }
+
+func TreeToFolderList(node Node) (folders []store.Folder) {
+	folders = make([]store.Folder, 0)
+	for node != nil {
+		folderNode, ok := node.(*FolderNode)
+		if ok {
+			folders = append(folders, *nodeToFolder(folderNode))
+		}
+		node = node.Prev()
+	}
+	return folders
+}
