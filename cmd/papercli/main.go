@@ -21,7 +21,6 @@ import (
 	"github.com/jpopesculian/papercli/pkg/api"
 	"github.com/jpopesculian/papercli/pkg/config"
 	"github.com/jpopesculian/papercli/pkg/dropbox"
-	"github.com/jpopesculian/papercli/pkg/files"
 	"github.com/jpopesculian/papercli/pkg/version"
 	"os"
 )
@@ -42,8 +41,7 @@ func main() {
 	case "update":
 		api.Update(options)
 	case "init":
-		fmt.Println(files.RootDir())
-		// files.CreateRootFile()
+		config.CreateConfigDir(options)
 	case "version":
 		fmt.Println(version.VERSION)
 	default:

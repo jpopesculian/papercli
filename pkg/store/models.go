@@ -2,7 +2,9 @@ package store
 
 import (
 	bolt "github.com/coreos/bbolt"
+	"github.com/jpopesculian/papercli/pkg/config"
 	"log"
+	"path/filepath"
 )
 
 var UPSTREAM_FOLDER_NAME_B = []byte("upstream_folder_name")
@@ -23,8 +25,20 @@ type FolderEntity interface {
 	InFolder() bool
 }
 
-func NewStore() *Store {
-	db, err := bolt.Open("paper.db", 0600, nil)
+func getDbPath(options *config.CliOptions) (string, error) {
+	dir, err := options.ConfigDir()
+	if err != nil {
+		return "", nil
+	}
+	return filepath.Join(dir, "paper.db"), nil
+}
+
+func NewStore(options *config.CliOptions) *Store {
+	path, err := getDbPath(options)
+	if err != nil {
+		log.Fatal(err)
+	}
+	db, err := bolt.Open(path, 0600, nil)
 	if err != nil {
 		log.Fatal(err)
 	}

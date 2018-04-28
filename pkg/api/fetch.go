@@ -9,7 +9,7 @@ import (
 )
 
 func Fetch(options *config.CliOptions) {
-	store := store.NewStore()
+	store := store.NewStore(options)
 	list, err := dp.DocList(options)
 	if err != nil {
 		log.Fatal(err)

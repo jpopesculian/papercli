@@ -9,7 +9,7 @@ import (
 )
 
 func Update(options *config.CliOptions) {
-	store := store.NewStore()
+	store := store.NewStore(options)
 	id := store.FetchFirstId()
 	document := store.UpstreamDocumentById(id)
 	tree := files.BuildUpstreamFileTree(document, store)
