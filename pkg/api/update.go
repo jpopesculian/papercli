@@ -1,7 +1,7 @@
 package api
 
 import (
-	"github.com/davecgh/go-spew/spew"
+	// "github.com/davecgh/go-spew/spew"
 	"github.com/jpopesculian/papercli/pkg/config"
 	"github.com/jpopesculian/papercli/pkg/files"
 	"github.com/jpopesculian/papercli/pkg/store"
@@ -49,6 +49,10 @@ func Update(options *config.CliOptions) {
 		tree := <-trees
 		if tree != nil {
 			folderList.add(files.TreeToFolderList(tree))
+			err = files.SavePathsToDb(tree, db, options)
+			if err != nil {
+				log.Println(err)
+			}
 		}
 	}
 	if err := db.SaveLocalFolders(folderList.folders); err != nil {

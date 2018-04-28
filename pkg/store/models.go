@@ -19,6 +19,8 @@ var UPSTREAM_REVISION_B = []byte("upstream_revision")
 var LOCAL_REVISION_B = []byte("local_revision")
 var LAST_FETCH_B = []byte("last_fetch")
 var LAST_PUSH_B = []byte("last_push")
+var DOC_PATH_B = []byte("doc_path")
+var FOLDER_PATH_B = []byte("folder_path")
 
 type Id string
 
@@ -72,6 +74,8 @@ func (store *Store) createBuckets() error {
 		LOCAL_TITLE_B,
 		LOCAL_REVISION_B,
 		LAST_PUSH_B,
+		DOC_PATH_B,
+		FOLDER_PATH_B,
 	}
 	err := store.db.Batch(func(tx *bolt.Tx) error {
 		for _, bucket := range buckets {

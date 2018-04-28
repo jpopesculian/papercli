@@ -107,6 +107,17 @@ func (store *Store) SaveUpstreamFolders(folders []Folder) error {
 	return err
 }
 
+func (store *Store) SaveFolderPath(id Id, path string) error {
+	return store.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket(FOLDER_PATH_B)
+		err := b.Put([]byte(path), []byte(id))
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+}
+
 func (store *Store) SaveLocalFolders(folders []Folder) error {
 	err := store.db.Batch(func(tx *bolt.Tx) error {
 		for _, folder := range folders {

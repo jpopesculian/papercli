@@ -191,6 +191,17 @@ func (store *Store) SaveLocalDocument(document *Document) error {
 	})
 }
 
+func (store *Store) SaveDocPath(id Id, path string) error {
+	return store.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket(DOC_PATH_B)
+		err := b.Put([]byte(path), []byte(id))
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+}
+
 func (store *Store) UpstreamDocumentById(id Id) *Document {
 	document := &Document{
 		Id: id,

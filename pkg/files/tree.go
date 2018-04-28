@@ -31,7 +31,7 @@ func CreateFile(node Node, options *config.CliOptions) error {
 	for !node.IsRoot() {
 		node = node.Prev()
 	}
-	for !node.IsLeaf() {
+	for node != nil {
 		err = node.Create(dir)
 		if err != nil {
 			return err
@@ -39,7 +39,28 @@ func CreateFile(node Node, options *config.CliOptions) error {
 		dir = filepath.Join(dir, node.FsName())
 		node = node.Next()
 	}
-	return node.Create(dir)
+	return nil
+}
+
+func SavePathsToDb(node Node, db *store.Store, options *config.CliOptions) error {
+	path, err := options.RootDir()
+	if err != nil {
+		return err
+	}
+	for !node.IsRoot() {
+		node = node.Prev()
+	}
+	for node != nil {
+		path = filepath.Join(path, node.FsName())
+		if doc, ok := node.(*DocumentNode); ok {
+			db.SaveDocPath(doc.Id, path)
+		}
+		if folder, ok := node.(*FolderNode); ok {
+			db.SaveFolderPath(folder.Id, path)
+		}
+		node = node.Next()
+	}
+	return nil
 }
 
 func TreeToFolderList(node Node) (folders []store.Folder) {
