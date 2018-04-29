@@ -42,25 +42,13 @@ func CreateFile(node Node, options *config.CliOptions) error {
 	return nil
 }
 
-func SavePathsToDb(node Node, db *store.Store, options *config.CliOptions) error {
-	path, err := options.RootDir()
-	if err != nil {
-		return err
-	}
-	for !node.IsRoot() {
+func RelativePath(node Node) string {
+	path := ""
+	for node != nil {
+		path = filepath.Join(node.FsName(), path)
 		node = node.Prev()
 	}
-	for node != nil {
-		path = filepath.Join(path, node.FsName())
-		if doc, ok := node.(*DocumentNode); ok {
-			db.SaveDocPath(doc.Id, path)
-		}
-		if folder, ok := node.(*FolderNode); ok {
-			db.SaveFolderPath(folder.Id, path)
-		}
-		node = node.Next()
-	}
-	return nil
+	return path
 }
 
 func TreeToFolderList(node Node) (folders []store.Folder) {

@@ -43,6 +43,8 @@ func main() {
 	case "pull":
 		api.Fetch(options)
 		api.Update(options)
+	case "push":
+		api.Push(options)
 	case "init":
 		config.CreateConfigDir(options)
 	case "version":

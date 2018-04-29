@@ -8,53 +8,31 @@ import (
 	"log"
 )
 
-func saveUpstreamDocuments(db *store.Store, options *config.CliOptions) (int, chan *store.Document, chan *files.DocumentNode, chan error) {
-	documents, cont := db.UpstreamDocuments()
-	count := 0
-	savedDocuments := make(chan *store.Document)
-	savedTrees := make(chan *files.DocumentNode)
-	errors := make(chan error)
-	for <-cont {
-		go func(document *store.Document) {
-			tree := files.BuildUpstreamFileTree(document, db)
-			err := files.CreateFile(tree, options)
-			errors <- err
-			if err == nil {
-				savedDocuments <- document
-				savedTrees <- tree
-			} else {
-				savedDocuments <- nil
-				savedTrees <- nil
-			}
-		}(<-documents)
-		count++
-	}
-	return count, savedDocuments, savedTrees, errors
+func saveUpstreamDocuments(db *store.Store, options *config.CliOptions, fn func(*store.Document, *files.DocumentNode, error)) {
+	db.UpstreamDocuments(func(document *store.Document) {
+		tree := files.BuildUpstreamFileTree(document, db)
+		err := files.CreateFile(tree, options)
+		if err == nil {
+			document.Path = files.RelativePath(tree)
+		}
+		fn(document, tree, err)
+	})
 }
 
 func Update(options *config.CliOptions) {
 	db := store.NewStore(options)
 	defer db.Close()
-	count, documents, trees, errors := saveUpstreamDocuments(db, options)
 	folderList := newUniqueFolderList(0)
-	for i := 0; i < count; i++ {
-		err := <-errors
+	saveUpstreamDocuments(db, options, func(document *store.Document, tree *files.DocumentNode, err error) {
 		if err != nil {
 			log.Println(err)
+			return
 		}
-		document := <-documents
-		if document != nil {
-			db.SaveLocalDocument(document)
+		if err = db.SaveLocalDocument(document); err != nil {
+			log.Println(err)
 		}
-		tree := <-trees
-		if tree != nil {
-			folderList.add(files.TreeToFolderList(tree))
-			err = files.SavePathsToDb(tree, db, options)
-			if err != nil {
-				log.Println(err)
-			}
-		}
-	}
+		folderList.add(files.TreeToFolderList(tree))
+	})
 	if err := db.SaveLocalFolders(folderList.folders); err != nil {
 		log.Println(err)
 	}

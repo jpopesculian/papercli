@@ -8,6 +8,7 @@ type Folder struct {
 	Id     Id
 	Name   string
 	Parent Id
+	Path   string
 }
 
 func (folder *Folder) FolderId() Id {
@@ -54,6 +55,15 @@ func (folder *Folder) saveLocalName(tx *bolt.Tx) error {
 	return nil
 }
 
+func (folder *Folder) savePath(tx *bolt.Tx) error {
+	b := tx.Bucket(FOLDER_PATH_B)
+	err := b.Put([]byte(folder.Path), []byte(folder.Id))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (folder *Folder) saveUpstream(tx *bolt.Tx) error {
 	if err := folder.saveUpstreamName(tx); err != nil {
 		return err
@@ -63,6 +73,9 @@ func (folder *Folder) saveUpstream(tx *bolt.Tx) error {
 
 func (folder *Folder) saveLocal(tx *bolt.Tx) error {
 	if err := folder.saveLocalName(tx); err != nil {
+		return err
+	}
+	if err := folder.savePath(tx); err != nil {
 		return err
 	}
 	return folder.saveLocalTree(tx)
@@ -105,17 +118,6 @@ func (store *Store) SaveUpstreamFolders(folders []Folder) error {
 		return nil
 	})
 	return err
-}
-
-func (store *Store) SaveFolderPath(id Id, path string) error {
-	return store.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket(FOLDER_PATH_B)
-		err := b.Put([]byte(path), []byte(id))
-		if err != nil {
-			return err
-		}
-		return nil
-	})
 }
 
 func (store *Store) SaveLocalFolders(folders []Folder) error {

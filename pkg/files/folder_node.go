@@ -63,5 +63,6 @@ func nodeToFolder(node *FolderNode) *store.Folder {
 		Id:     node.Id,
 		Name:   node.Name,
 		Parent: parentId,
+		Path:   RelativePath(node),
 	}
 }

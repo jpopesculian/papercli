@@ -4,6 +4,7 @@ import (
 	bolt "github.com/coreos/bbolt"
 	// "github.com/davecgh/go-spew/spew"
 	"github.com/jpopesculian/papercli/pkg/utils"
+	"sync"
 )
 
 type Document struct {
@@ -12,6 +13,7 @@ type Document struct {
 	Revision int
 	Folder   Id
 	Content  []byte
+	Path     string
 }
 
 func (document *Document) FolderId() Id {
@@ -52,6 +54,15 @@ func (document *Document) saveUpstreamFolder(tx *bolt.Tx) error {
 func (document *Document) saveLocalFolder(tx *bolt.Tx) error {
 	b := tx.Bucket(LOCAL_DOC_FOLDER_B)
 	err := b.Put([]byte(document.Id), []byte(document.Folder))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (document *Document) savePath(tx *bolt.Tx) error {
+	b := tx.Bucket(DOC_PATH_B)
+	err := b.Put([]byte(document.Path), []byte(document.Id))
 	if err != nil {
 		return err
 	}
@@ -169,6 +180,9 @@ func (document *Document) SaveLocal(tx *bolt.Tx) error {
 	if err := document.saveLocalRevision(tx); err != nil {
 		return err
 	}
+	if err := document.savePath(tx); err != nil {
+		return err
+	}
 	return document.saveLastPush(tx)
 }
 
@@ -191,17 +205,6 @@ func (store *Store) SaveLocalDocument(document *Document) error {
 	})
 }
 
-func (store *Store) SaveDocPath(id Id, path string) error {
-	return store.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket(DOC_PATH_B)
-		err := b.Put([]byte(path), []byte(id))
-		if err != nil {
-			return err
-		}
-		return nil
-	})
-}
-
 func (store *Store) UpstreamDocumentById(id Id) *Document {
 	document := &Document{
 		Id: id,
@@ -217,22 +220,19 @@ func (store *Store) UpstreamDocumentById(id Id) *Document {
 	return document
 }
 
-func (store *Store) UpstreamDocuments() (documents chan *Document, cont chan bool) {
-	documents = make(chan *Document)
-	cont = make(chan bool)
-	go func() {
-		store.db.View(func(tx *bolt.Tx) error {
-			b := tx.Bucket(UPSTREAM_TITLE_B)
-			c := b.Cursor()
-			for k, _ := c.First(); k != nil; k, _ = c.Next() {
-				cont <- true
-				go func(id Id) {
-					documents <- store.UpstreamDocumentById(id)
-				}(Id(string(k)))
-			}
-			cont <- false
-			return nil
-		})
-	}()
-	return documents, cont
+func (store *Store) UpstreamDocuments(fn func(*Document)) {
+	var wg sync.WaitGroup
+	store.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket(UPSTREAM_TITLE_B)
+		c := b.Cursor()
+		for k, _ := c.First(); k != nil; k, _ = c.Next() {
+			wg.Add(1)
+			go func(id Id) {
+				defer wg.Done()
+				fn(store.UpstreamDocumentById(id))
+			}(Id(string(k)))
+		}
+		return nil
+	})
+	wg.Wait()
 }
