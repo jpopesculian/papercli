@@ -19,12 +19,16 @@ type Cursor struct {
 }
 
 type Request struct {
-	Url            string
-	Params         interface{}
-	Options        *config.CliOptions
-	ParamsInHeader bool
-	httpResponse   *http.Response
+	Url             string
+	Params          interface{}
+	Data            []byte
+	Options         *config.CliOptions
+	ParamsInHeader  bool
+	ResultsInHeader bool
+	httpResponse    *http.Response
 }
+
+const MARKDOWN = "markdown"
 
 func (request *Request) newHttpReq(body io.Reader) (req *http.Request, err error) {
 	method := "POST"
@@ -42,11 +46,18 @@ func (request *Request) newJsonHttpReq(data []byte) (req *http.Request, err erro
 }
 
 func (request *Request) newHeaderApiHttpReq(data []byte) (req *http.Request, err error) {
-	req, err = request.newHttpReq(nil)
+	if request.Data != nil && len(request.Data) > 0 {
+		req, err = request.newHttpReq(bytes.NewBuffer(request.Data))
+	} else {
+		req, err = request.newHttpReq(nil)
+	}
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("Dropbox-API-Arg", string(data))
+	if request.Data != nil {
+		req.Header.Set("Content-Type", "application/octet-stream")
+	}
 	return req, nil
 }
 
@@ -110,7 +121,7 @@ func (request *Request) EvalString() (result string, err error) {
 	if err != nil {
 		return "", err
 	}
-	if request.ParamsInHeader {
+	if request.ResultsInHeader {
 		return res.Header.Get("Dropbox-Api-Result"), nil
 	} else {
 		return readHttpResBody(res)

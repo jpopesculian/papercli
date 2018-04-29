@@ -33,11 +33,7 @@ func documentPaths(options *config.CliOptions, fn func(string)) {
 }
 
 func doDiff(path string, db *store.Store, options *config.CliOptions) (dmp *difftool.DiffMatchPatch, diffs []difftool.Diff, err error) {
-	root, err := options.RootDir()
-	if err != nil {
-		return nil, nil, err
-	}
-	rel, err := filepath.Rel(root, path)
+	rel, err := options.RelToRoot(path)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -62,7 +58,7 @@ func isEqual(diffs []difftool.Diff) bool {
 	return true
 }
 
-func ChangedPaths(db *store.Store, options *config.CliOptions, fn func(string, *difftool.DiffMatchPatch, []difftool.Diff, error)) {
+func ChangedFiles(db *store.Store, options *config.CliOptions, fn func(string, *difftool.DiffMatchPatch, []difftool.Diff, error)) {
 	documentPaths(options, func(path string) {
 		dmp, diffs, err := doDiff(path, db, options)
 		if err != nil {

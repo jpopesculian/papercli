@@ -4,8 +4,6 @@ import (
 	"github.com/jpopesculian/papercli/pkg/config"
 )
 
-const MARKDOWN = "markdown"
-
 type DownloadRequest struct {
 	DocId  Id     `json:"doc_id"`
 	Format string `json:"export_format"`
@@ -26,10 +24,11 @@ func Download(docId Id, options *config.CliOptions) (result *DownloadResult, err
 	}
 	result = &DownloadResult{}
 	request := &Request{
-		Url:            "/paper/docs/download",
-		Params:         params,
-		Options:        options,
-		ParamsInHeader: true,
+		Url:             "/paper/docs/download",
+		Params:          params,
+		Options:         options,
+		ParamsInHeader:  true,
+		ResultsInHeader: true,
 	}
 	err = request.EvalStruct(result)
 	if err != nil {

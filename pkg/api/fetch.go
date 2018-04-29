@@ -27,6 +27,22 @@ func Fetch(options *config.CliOptions) {
 	}
 }
 
+func fetchOne(docId dp.Id, title string, db *store.Store, options *config.CliOptions) error {
+	folderList, document, err := fetchDocInfo(docId, options)
+	if err != nil {
+		return err
+	}
+	// override title because dropbox is annoying
+	document.Title = title
+	if err = db.SaveUpstreamDocument(document); err != nil {
+		return err
+	}
+	if err = db.SaveUpstreamFolders(folderList); err != nil {
+		return err
+	}
+	return nil
+}
+
 func fetchDocInfo(docId dp.Id, options *config.CliOptions) (folderList []store.Folder, document *store.Document, err error) {
 	folderInfoC, folderErrC := dp.FolderInfoFuture(docId, options)
 	downloadC, downloadErrC := dp.DownloadFuture(docId, options)

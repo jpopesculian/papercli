@@ -143,3 +143,16 @@ func (store *Store) UpstreamFolderById(id Id) *Folder {
 	folder.Parent = <-parent
 	return folder
 }
+
+func (store *Store) FolderIdByPath(path string) chan Id {
+	result := make(chan Id, 1)
+	go func() {
+		store.db.View(func(tx *bolt.Tx) error {
+			b := tx.Bucket(FOLDER_PATH_B)
+			id := b.Get([]byte(path))
+			result <- Id(string(id))
+			return nil
+		})
+	}()
+	return result
+}

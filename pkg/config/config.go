@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/jpopesculian/papercli/pkg/utils"
 	"os"
+	"path/filepath"
 )
 
 type CliOptions struct {
@@ -63,4 +64,12 @@ func (options *CliOptions) ConfigDir() (string, error) {
 		return "", err
 	}
 	return configDir, nil
+}
+
+func (options *CliOptions) RelToRoot(path string) (string, error) {
+	root, err := options.RootDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Rel(root, path)
 }

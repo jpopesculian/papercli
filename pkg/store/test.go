@@ -2,6 +2,7 @@ package store
 
 import (
 	bolt "github.com/coreos/bbolt"
+	"github.com/davecgh/go-spew/spew"
 )
 
 func (store *Store) FetchFirstId() Id {
@@ -18,4 +19,9 @@ func (store *Store) FetchFirstId() Id {
 		return nil
 	})
 	return <-idC
+}
+
+func (store *Store) Stats() {
+	spew.Dump(store.db.IsReadOnly())
+	spew.Dump(store.db.Stats())
 }

@@ -199,6 +199,13 @@ func (store *Store) SaveUpstreamDocuments(documents []Document) error {
 	return err
 }
 
+func (store *Store) SaveUpstreamDocument(document *Document) error {
+	err := store.db.Batch(func(tx *bolt.Tx) error {
+		return document.SaveUpstream(tx)
+	})
+	return err
+}
+
 func (store *Store) SaveLocalDocument(document *Document) error {
 	return store.db.Update(func(tx *bolt.Tx) error {
 		return document.SaveLocal(tx)
@@ -218,6 +225,13 @@ func (store *Store) UpstreamDocumentById(id Id) *Document {
 	document.Content = <-content
 	document.Folder = <-folder
 	return document
+}
+
+func (store *Store) UpstreamRevisionById(id Id) int {
+	document := &Document{
+		Id: id,
+	}
+	return <-document.getUpstreamRevision(store)
 }
 
 func (store *Store) UpstreamDocuments(fn func(*Document)) {
@@ -252,6 +266,19 @@ func (store *Store) LastPushByPath(path string) chan []byte {
 				result <- nil
 			}
 			result <- push
+			return nil
+		})
+	}()
+	return result
+}
+
+func (store *Store) DocIdByPath(path string) chan Id {
+	result := make(chan Id, 1)
+	go func() {
+		store.db.View(func(tx *bolt.Tx) error {
+			b := tx.Bucket(DOC_PATH_B)
+			id := b.Get([]byte(path))
+			result <- Id(string(id))
 			return nil
 		})
 	}()
