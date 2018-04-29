@@ -1,34 +1,19 @@
 package api
 
 import (
+	// "github.com/davecgh/go-spew/spew"
 	"github.com/jpopesculian/papercli/pkg/config"
+	"github.com/jpopesculian/papercli/pkg/files"
+	"github.com/jpopesculian/papercli/pkg/store"
+	difftool "github.com/sergi/go-diff/diffmatchpatch"
 	"log"
-	"os"
-	"path/filepath"
 )
 
-func documentPaths(options *config.CliOptions, fn func(string) error) error {
-	root, err := options.RootDir()
-	if err != nil {
-		return err
-	}
-	return filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
-		if err != nil || info.IsDir() {
-			return nil
-		}
-		if filepath.Ext(path) != ".md" {
-			return nil
-		}
-		return fn(path)
-	})
-}
-
 func Push(options *config.CliOptions) {
-	err := documentPaths(options, func(path string) error {
+	db := store.NewStore(options)
+	defer db.Close()
+	files.ChangedPaths(db, options, func(path string, dmp *difftool.DiffMatchPatch, diffs []difftool.Diff, err error) {
 		log.Println(path)
-		return nil
+		log.Println(dmp.DiffPrettyText(diffs))
 	})
-	if err != nil {
-		log.Fatal(err)
-	}
 }

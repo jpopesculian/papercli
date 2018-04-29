@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"io/ioutil"
 	"os"
 	"strings"
 )
@@ -18,4 +19,15 @@ func UpDirectory(dir string) string {
 
 func SplitPath(dir string) []string {
 	return strings.Split(dir, string(os.PathSeparator))
+}
+
+func ReadFileAsync(path string) (chan []byte, chan error) {
+	result := make(chan []byte, 1)
+	errs := make(chan error, 1)
+	go func() {
+		content, err := ioutil.ReadFile(path)
+		errs <- err
+		result <- content
+	}()
+	return result, errs
 }

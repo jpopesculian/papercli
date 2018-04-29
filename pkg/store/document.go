@@ -236,3 +236,24 @@ func (store *Store) UpstreamDocuments(fn func(*Document)) {
 	})
 	wg.Wait()
 }
+
+func (store *Store) LastPushByPath(path string) chan []byte {
+	result := make(chan []byte, 1)
+	go func() {
+		store.db.View(func(tx *bolt.Tx) error {
+			ids := tx.Bucket(DOC_PATH_B)
+			pushes := tx.Bucket(LAST_PUSH_B)
+			id := ids.Get([]byte(path))
+			if len(id) < 1 {
+				result <- nil
+			}
+			push := pushes.Get(id)
+			if len(push) < 1 {
+				result <- nil
+			}
+			result <- push
+			return nil
+		})
+	}()
+	return result
+}
